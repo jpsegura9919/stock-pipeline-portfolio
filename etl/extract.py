@@ -50,6 +50,9 @@ def extract_prices(tickers: list[str] = TICKERS, days: int = 90) -> pd.DataFrame
         print(f"  → [{i+1}/{len(tickers)}] Descargando {ticker}...")
 
         try:
+            info = yf.Ticker(ticker).fast_info
+            currency = getattr(info, "currency", "N/A") or "N/A"
+
             raw = yf.download(ticker, start=start, end=end, progress=False, auto_adjust=True)
 
             if raw.empty:
@@ -64,10 +67,12 @@ def extract_prices(tickers: list[str] = TICKERS, days: int = 90) -> pd.DataFrame
             raw = raw.reset_index()
             raw.columns = [c.lower() for c in raw.columns]
             raw["ticker"] = ticker
+            raw["currency"] = currency
             raw = raw.rename(columns={"index": "date"})
-            raw = raw[["date", "ticker", "open", "high", "low", "close", "volume"]]
+            raw = raw[["date", "ticker", "currency", "open", "high", "low", "close", "volume"]]
             raw["date"] = pd.to_datetime(raw["date"]).dt.date
 
+            print(f"     Divisa: {currency}")
             frames.append(raw)
 
         except Exception as e:

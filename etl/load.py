@@ -27,6 +27,7 @@ def create_tables(engine):
         id          SERIAL PRIMARY KEY,
         date        DATE          NOT NULL,
         ticker      VARCHAR(10)   NOT NULL,
+        currency    VARCHAR(10),
         open        NUMERIC(12,4),
         high        NUMERIC(12,4),
         low         NUMERIC(12,4),
@@ -34,6 +35,8 @@ def create_tables(engine):
         volume      BIGINT,
         UNIQUE (date, ticker)
     );
+
+    ALTER TABLE stock_prices ADD COLUMN IF NOT EXISTS currency VARCHAR(10);
 
     CREATE TABLE IF NOT EXISTS stock_metrics (
         id                  SERIAL PRIMARY KEY,
@@ -61,9 +64,10 @@ def load_prices(df: pd.DataFrame, engine):
     """
     records = df.to_dict(orient="records")
     upsert_sql = text("""
-        INSERT INTO stock_prices (date, ticker, open, high, low, close, volume)
-        VALUES (:date, :ticker, :open, :high, :low, :close, :volume)
+        INSERT INTO stock_prices (date, ticker, currency, open, high, low, close, volume)
+        VALUES (:date, :ticker, :currency, :open, :high, :low, :close, :volume)
         ON CONFLICT (date, ticker) DO UPDATE SET
+            currency = EXCLUDED.currency,
             open   = EXCLUDED.open,
             high   = EXCLUDED.high,
             low    = EXCLUDED.low,
