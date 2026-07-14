@@ -1,24 +1,22 @@
-# 🏠 Real Estate Multi-Portal Pipeline
+# 📈 Stock Market ETL Pipeline
 
-Pipeline de datos inmobiliarios multiportal con **deduplicación cross-portal** para el mercado de Sevilla. Integra Fotocasa y Habitaclia mediante scraping automatizado y detecta anuncios duplicados entre portales.
+Pipeline automatizada de datos financieros internacionales construida con Python, PostgreSQL y Power BI.
 
 ## 🎯 Objetivo
 
-Ofrecer una visión completa y limpia del mercado inmobiliario sevillano combinando varios portales, evitando el sesgo que supone consultar uno solo. Demuestra un caso de uso realista de ingeniería de datos: extracción, transformación, deduplicación y visualización.
+Demostrar un flujo completo de ingeniería de datos: desde la extracción de datos en tiempo real hasta la visualización interactiva, con automatización en producción.
 
 ## 🏗️ Arquitectura
 
 ```
-Fotocasa                 Habitaclia
-    ↓                        ↓
-Playwright + BeautifulSoup (scraping)
-    ↓
-Normalización + Fingerprint (deduplicación)
-    ↓
+Yahoo Finance (yfinance)
+        ↓
+Python ETL (extract → transform → load)
+        ↓
 PostgreSQL (Neon Cloud)
-    ↓
-Programador de tareas Windows (ejecución semanal)
-    ↓
+        ↓
+GitHub Actions (ejecución diaria automatizada)
+        ↓
 Power BI Service (dashboard con refresco automático)
 ```
 
@@ -26,62 +24,63 @@ Power BI Service (dashboard con refresco automático)
 
 | Capa | Tecnología |
 |---|---|
-| Scraping | Python · Playwright · BeautifulSoup |
-| Transformación | pandas · deduplicación por fingerprint |
+| Extracción | Python · yfinance |
+| Transformación | pandas · numpy |
 | Almacenamiento | PostgreSQL · Neon |
-| Orquestación | Programador de tareas de Windows |
+| Orquestación | GitHub Actions |
 | Visualización | Power BI Service |
 
-## 🧬 Deduplicación por fingerprint
+## 📊 Métricas calculadas
 
-Un mismo piso puede publicarse en varios portales con pequeñas variaciones. El sistema genera un identificador único combinando características normalizadas:
+- **Variación diaria %** — rendimiento respecto al cierre anterior
+- **Media móvil 7 días** — tendencia a corto plazo
+- **Media móvil 30 días** — tendencia a medio plazo
+- **Volatilidad anualizada** — desviación estándar de retornos en 30 días
+- **RSI 14** — índice de fuerza relativa (señal de sobrecompra/venta)
 
-```python
-fingerprint = f"{operation}|{zone_norm}|{rooms}|{bathrooms}|{size_bucket}|{price_bucket}"
-```
+## 🌍 Cobertura
 
-Aplica tolerancias para absorber variaciones:
-- **Zona:** normalizada (sin tildes, minúsculas)
-- **Superficie:** buckets de ±5 m²
-- **Precio:** buckets de ±1.000 €
+~100 tickers internacionales organizados por región:
 
-**Resultado observado en producción:** ~12% de duplicados detectados entre Fotocasa y Habitaclia.
+- 🇺🇸 **USA** — Big Tech, Finanzas, Consumo (AAPL, MSFT, NVDA, JPM, V...)
+- 🇪🇺 **Europa** — ASML, SAP, Inditex, BBVA, Airbus, LVMH...
+- 🇯🇵🇰🇷🇨🇳 **Asia** — Toyota, Sony, TSMC, Alibaba, Samsung...
+- 🌍 **Otros** — Mercadolibre, Infosys, Vale, Shopify...
 
 ## 📁 Estructura del proyecto
 
 ```
-📁 real-estate-pipeline/
-├── 📁 scrapers/
-│   ├── base.py             # Clase base abstracta común
-│   ├── fotocasa.py         # Scraper Fotocasa
-│   └── habitaclia.py       # Scraper Habitaclia
+📁 stock-pipeline-portfolio/
 ├── 📁 etl/
-│   ├── transform.py        # Limpieza + fingerprint + deduplicación
-│   └── load.py             # Carga en PostgreSQL
-├── main.py                 # Orquestador ETL completo
+│   ├── extract.py      # Descarga precios desde Yahoo Finance
+│   ├── transform.py    # Calcula métricas financieras
+│   └── load.py         # Carga con upsert en PostgreSQL
+├── 📁 .github/
+│   └── 📁 workflows/
+│       └── pipeline.yml  # GitHub Action — ejecución diaria
+├── main.py             # Orquestador del ETL completo
 └── requirements.txt
 ```
 
-La arquitectura permite añadir nuevos portales creando una clase que herede de `BaseScraper`.
+## ⚙️ Pipeline automatizada
 
-## 📊 Modelo de datos
+El workflow de GitHub Actions se ejecuta automáticamente cada día laborable a las 10:00h (España) y actualiza los datos en PostgreSQL. Power BI Service refresca el dataset diariamente de forma sincronizada.
 
-Tres tablas en PostgreSQL:
-
-- **`listings`** — todos los anuncios extraídos con su origen (`source`)
-- **`listings_deduplicated`** — anuncios únicos tras deduplicación cross-portal
-- **`market_summary`** — agregado por zona, operación y fecha
+```yaml
+on:
+  schedule:
+    - cron: "0 8 * * 1-5"  # Lunes a viernes, 8:00 UTC
+```
 
 ## 🚀 Ejecutar en local
 
 ```bash
-# 1. Clonar
-git clone https://github.com/jpsegura9919/real-estate-pipeline.git
-cd real-estate-pipeline
+# 1. Clonar el repositorio
+git clone https://github.com/jpsegura9919/stock-pipeline-portfolio.git
+cd stock-pipeline-portfolio
 
 # 2. Instalar dependencias
 pip install -r requirements.txt
-python -m playwright install chromium
 
 # 3. Configurar variables de entorno
 cp .env.example .env
@@ -93,20 +92,7 @@ python main.py
 
 ## 📊 Dashboard
 
-[🔗 Ver dashboard en Power BI →](https://app.powerbi.com/view?r=eyJrIjoiMTYwNGQ2NjUtODBlOS00N2JjLWJhMzctMmZiOWFhNjI0YWU1IiwidCI6IjQ3ZTNjY2NhLTFkZTgtNDJlNi1hOTI3LTU5N2UyNTI0YThmZSJ9)
-
-El dashboard incluye:
-
-- **Resumen** — KPIs del mercado, rentabilidad bruta, distribución por tamaño
-- **Comparativa venta vs alquiler** — precio por m² separado por operación y rentabilidad por barrio
-- **Comparativa entre portales** — análisis del sesgo entre Fotocasa y Habitaclia
-
-## 🧭 Cobertura
-
-- **Ciudad:** Sevilla (viviendas de venta y alquiler)
-- **Portales:** Fotocasa · Habitaclia
-- **Frecuencia:** semanal (todos los lunes)
-
+[🔗 Ver dashboard en Power BI →] https://app.powerbi.com/view?r=eyJrIjoiMWI1ODJhMDgtODVjOC00YTM0LTkxNTItOWU2Y2VkNDViODdlIiwidCI6IjQ3ZTNjY2NhLTFkZTgtNDJlNi1hOTI3LTU5N2UyNTI0YThmZSJ9
 ---
 
-*Proyecto desarrollado como parte de un portfolio de Data Engineering & Analytics.*
+*Proyecto desarrollado como parte de un portfolio de Data Analytics & Engineering.*
