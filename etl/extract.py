@@ -9,36 +9,42 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
 
-TICKERS = [
-    # USA — Big Tech
-    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "AVGO",
-    "ORCL", "ADBE", "CRM", "AMD", "INTC", "QCOM", "TXN", "IBM",
-    "CSCO", "NFLX", "UBER", "PYPL",
+# Tickers agrupados por región de la empresa (no por divisa de cotización:
+# ASML, SAP o TSM cotizan como ADR en USD pero son empresas europeas/asiáticas)
+TICKERS_BY_REGION = {
+    "USA": [
+        # Big Tech
+        "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA", "AVGO",
+        "ORCL", "ADBE", "CRM", "AMD", "INTC", "QCOM", "TXN", "IBM",
+        "CSCO", "NFLX", "UBER", "PYPL",
+        # Finanzas y consumo
+        "JPM", "BAC", "GS", "MS", "V", "MA", "BRK-B", "WMT",
+        "COST", "HD", "MCD", "KO", "PEP", "JNJ", "PFE", "UNH",
+        "XOM", "CVX", "BA", "CAT",
+    ],
+    "Europa": [
+        "ASML", "SAP", "MC.PA", "ITX.MC", "SIE.DE", "BBVA.MC", "SAN.MC",
+        "TTE.PA", "AIR.PA", "NESN.SW", "ROG.SW", "NVS", "VOW3.DE", "BMW.DE",
+        "RMS.PA", "OR.PA", "ULVR.L", "AZN", "HSBC", "SHEL",
+    ],
+    "Asia": [
+        "TM", "SONY", "TSM", "BABA", "TCEHY", "BIDU", "NTDOY",
+        "HMC", "SFTBY", "HYMTF", "NTTYY", "MSBHF",
+    ],
+    "Otros": [
+        "INFY", "VALE", "PBR", "SHOP", "MELI", "BHP", "RIO",
+    ],
+}
 
-    # USA — Finanzas y consumo
-    "JPM", "BAC", "GS", "MS", "V", "MA", "BRK-B", "WMT",
-    "COST", "HD", "MCD", "KO", "PEP", "JNJ", "PFE", "UNH",
-    "XOM", "CVX", "BA", "CAT",
-
-    # Europa
-    "ASML", "SAP", "MC.PA", "ITX.MC", "SIE.DE", "BBVA.MC", "SAN.MC",
-    "TTE.PA", "AIR.PA", "NESN.SW", "ROG.SW", "NVS", "VOW3.DE", "BMW.DE",
-    "RMS.PA", "OR.PA", "ULVR.L", "AZN", "HSBC", "SHEL",
-
-    # Asia
-    "TM", "SONY", "TSM", "BABA", "TCEHY", "BIDU", "NTDOY",
-    "HMC", "SFTBY", "HYMTF", "NTTYY", "MSBHF",
-
-    # Otros mercados
-    "INFY", "VALE", "PBR", "SHOP", "MELI", "BHP", "RIO",
-]
+TICKER_REGION = {t: region for region, ts in TICKERS_BY_REGION.items() for t in ts}
+TICKERS = list(TICKER_REGION.keys())
 
 
 def extract_prices(tickers: list[str] = TICKERS, days: int = 90) -> pd.DataFrame:
     """
     Descarga los precios de cierre de los últimos `days` días para cada ticker.
     Incluye pausas para evitar rate limiting con listas grandes.
-    Devuelve un DataFrame con columnas: date, ticker, open, high, low, close, volume.
+    Devuelve un DataFrame con columnas: date, ticker, currency, region, open, high, low, close, volume.
     """
     end = datetime.today()
     start = end - timedelta(days=days)
@@ -68,8 +74,9 @@ def extract_prices(tickers: list[str] = TICKERS, days: int = 90) -> pd.DataFrame
             raw.columns = [c.lower() for c in raw.columns]
             raw["ticker"] = ticker
             raw["currency"] = currency
+            raw["region"] = TICKER_REGION.get(ticker, "Otros")
             raw = raw.rename(columns={"index": "date"})
-            raw = raw[["date", "ticker", "currency", "open", "high", "low", "close", "volume"]]
+            raw = raw[["date", "ticker", "currency", "region", "open", "high", "low", "close", "volume"]]
             raw["date"] = pd.to_datetime(raw["date"]).dt.date
 
             print(f"     Divisa: {currency}")
