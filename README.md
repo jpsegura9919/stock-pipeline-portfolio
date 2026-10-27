@@ -92,7 +92,7 @@ python main.py
 
 ## 📊 Dashboard
 
-[🔗 Ver dashboard en Power BI →] https://app.powerbi.com/view?r=eyJrIjoiMWI1ODJhMDgtODVjOC00YTM0LTkxNTItOWU2Y2VkNDViODdlIiwidCI6IjQ3ZTNjY2NhLTFkZTgtNDJlNi1hOTI3LTU5N2UyNTI0YThmZSJ9
+[https://app.powerbi.com/view?r=eyJrIjoiMWI1ODJhMDgtODVjOC00YTM0LTkxNTItOWU2Y2VkNDViODdlIiwidCI6IjQ3ZTNjY2NhLTFkZTgtNDJlNi1hOTI3LTU5N2UyNTI0YThmZSJ9](https://app.powerbi.com/view?r=eyJrIjoiMWI1ODJhMDgtODVjOC00YTM0LTkxNTItOWU2Y2VkNDViODdlIiwidCI6IjQ3ZTNjY2NhLTFkZTgtNDJlNi1hOTI3LTU5N2UyNTI0YThmZSJ9)
 ---
 
 *Proyecto desarrollado como parte de un portfolio de Data Analytics & Engineering.*
